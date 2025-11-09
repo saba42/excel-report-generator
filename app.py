@@ -246,7 +246,7 @@ def generate_performance_report(input_file, output_file):
     # Participation first
     generate_participation_report(input_file, output_file)
 
-    # ---------------- Find "Test Status" column (case-insensitive) ----------------
+    # ---------------- Find "Test Status" column ----------------
     status_index = None
     for idx, col in enumerate(df.columns):
         if str(col).strip().lower() == "test status":
@@ -255,14 +255,14 @@ def generate_performance_report(input_file, output_file):
     if status_index is None:
         raise Exception("❌ 'Test Status' column not found in the uploaded file.")
 
-    # ---------------- Find test name (column before "max score") ----------------
-    max_score_col_name = df.columns[status_index + 1]  # Next column after Test Status
-    test_name = max_score_col_name.replace(" max score", "").strip()
-
-    # ---------------- Total percentage column dynamically ----------------
-    total_percentage_col = f"{test_name} total percentage"
-    if total_percentage_col not in df.columns:
-        raise Exception(f"❌ Expected column '{total_percentage_col}' not found!")
+    # ---------------- Find first "total percentage" column after Test Status ----------------
+    total_percentage_col = None
+    for col in df.columns[status_index + 1:]:
+        if "total percentage" in str(col).strip().lower():
+            total_percentage_col = col
+            break
+    if total_percentage_col is None:
+        raise Exception("❌ No 'total percentage' column found after 'Test Status'.")
 
     # ---------------- Categorize function ----------------
     def categorize(percentage):
@@ -355,6 +355,7 @@ def generate_performance_report(input_file, output_file):
         ws_perf.column_dimensions[column_letter].width = max_length + 8
 
     wb.save(output_file)
+
 
 # -------------------- FLASK ROUTE --------------------
 @app.route("/", methods=["GET", "POST"])
