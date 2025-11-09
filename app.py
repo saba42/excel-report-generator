@@ -10,7 +10,7 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# -------------------- HTML PAGE --------------------
+# -------------------- HTML PAGE WITH FORM --------------------
 HTML_PAGE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -89,48 +89,30 @@ input[type=file] { display: none; }
 <body>
 <div class="container">
 <h2>Excel Report Generator</h2>
-<div class="upload-box" onclick="document.getElementById('fileUpload').click();">
-    📂 Choose Excel File
-</div>
-<input id="fileUpload" type="file" accept=".xlsx">
-<button class="btn" onclick="uploadReport('participation')">Generate Participation Report</button>
-<button class="btn" onclick="uploadReport('performance')">Generate Performance Report</button>
+
+<form action="/" method="post" enctype="multipart/form-data" id="uploadForm">
+    <div class="upload-box" onclick="document.getElementById('fileUpload').click();">
+        📂 Choose Excel File
+    </div>
+    <input id="fileUpload" name="file" type="file" accept=".xlsx">
+    <input type="hidden" name="action" id="actionInput">
+    <button type="button" class="btn" onclick="submitForm('participation')">Generate Participation Report</button>
+    <button type="button" class="btn" onclick="submitForm('performance')">Generate Performance Report</button>
+</form>
+
 <div class="status" id="status"></div>
 <div class="footer">Designed with 💙 by Sabapathi</div>
 </div>
 
 <script>
-let selectedFile = null;
-document.getElementById('fileUpload').addEventListener('change', (e) => {
-    selectedFile = e.target.files[0];
-    document.getElementById('status').innerText = selectedFile ? "📄 File selected: " + selectedFile.name : "";
-});
-
-function uploadReport(action) {
-    if(!selectedFile) { alert("Please choose a file first!"); return; }
-    const status = document.getElementById('status');
-    status.innerText = "⏳ Uploading...";
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-    formData.append("action", action);
-
-    fetch("/", { method: "POST", body: formData })
-    .then(res => {
-        if(!res.ok) throw new Error("Server error");
-        return res.blob();
-    })
-    .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "Report.xlsx";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        status.innerText = "✅ Uploaded & Report Downloaded!";
-    })
-    .catch(err => { console.error(err); status.innerText = "❌ Error processing file!"; });
+function submitForm(action) {
+    const fileInput = document.getElementById('fileUpload');
+    if(!fileInput.files.length){
+        alert("Please choose a file first!");
+        return;
+    }
+    document.getElementById('actionInput').value = action;
+    document.getElementById('uploadForm').submit();
 }
 </script>
 </body>
@@ -358,27 +340,31 @@ def generate_performance_report(input_file, output_file):
 
 
 # -------------------- FLASK ROUTE --------------------
+# -------------------- FLASK ROUTE --------------------
 @app.route("/", methods=["GET", "POST"])
 def upload_file():
     if request.method == "POST":
-        file = request.files.get("file")
-        action = request.form.get("action")
+        try:
+            file = request.files.get("file")
+            action = request.form.get("action")
 
-        if not file:
-            return "⚠️ Please upload an Excel file.", 400
+            if not file:
+                return "⚠️ Please upload an Excel file.", 400
 
-        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(filepath)
-        output_file = os.path.join(UPLOAD_FOLDER, "Report.xlsx")
+            filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+            file.save(filepath)
+            output_file = os.path.join(UPLOAD_FOLDER, "Report.xlsx")
 
-        if action == "participation":
-            generate_participation_report(filepath, output_file)
-        elif action == "performance":
-            generate_performance_report(filepath, output_file)
-        else:
-            return "⚠️ Invalid action.", 400
+            if action == "participation":
+                generate_participation_report(filepath, output_file)
+            elif action == "performance":
+                generate_performance_report(filepath, output_file)
+            else:
+                return "⚠️ Invalid action.", 400
 
-        return send_file(output_file, as_attachment=True)
+            return send_file(output_file, as_attachment=True)
+        except Exception as e:
+            return f"❌ Error: {str(e)}", 500
 
     return render_template_string(HTML_PAGE)
 
