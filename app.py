@@ -5,7 +5,6 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, Reference
-import uuid
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
@@ -20,71 +19,71 @@ HTML_PAGE = """
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Excel Report Generator</title>
 <style>
-    body {
-        font-family: 'Segoe UI', sans-serif;
-        background: linear-gradient(135deg, #1a2a5a 0%, #1e3c72 25%, #00c6ff 50%, #1e3c72 75%, #1a2a5a 100%);
-        height: 100vh;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    body::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.45);
-        backdrop-filter: blur(6px);
-        z-index: 0;
-    }
-    .container {
-        background-color: #0d1a3a;
-        border-radius: 20px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-        padding: 40px;
-        text-align: center;
-        width: 400px;
-        position: relative;
-        z-index: 1;
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(255,255,255,0.3);
-    }
-    h2 {
-        background: linear-gradient(90deg, #00c6ff, #007bff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 26px;
-        margin-bottom: 20px;
-        font-weight: 700;
-    }
-    .upload-box {
-        border: 2px dashed rgba(255,255,255,0.7);
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 25px;
-        color: white;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .upload-box:hover { background: rgba(255,255,255,0.1); transform: scale(1.02);}
-    input[type=file] { display: none; }
-    .btn {
-        background: linear-gradient(135deg, #007bff, #00c6ff);
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        margin: 10px 0;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 80%;
-        font-size: 15px;
-        font-weight: 600;
-        transition: 0.3s;
-    }
-    .btn:hover { transform: scale(1.03); }
-    .status { margin-top: 10px; color: #fff; font-weight: 600; }
-    .footer { margin-top: 15px; color: rgba(255,255,255,0.8); font-size: 13px; font-weight: 500; }
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1a2a5a 0%, #1e3c72 25%, #00c6ff 50%, #1e3c72 75%, #1a2a5a 100%);
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+    z-index: 0;
+}
+.container {
+    background-color: #0d1a3a;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    padding: 40px;
+    text-align: center;
+    width: 400px;
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+h2 {
+    background: linear-gradient(90deg, #00c6ff, #007bff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 26px;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+.upload-box {
+    border: 2px dashed rgba(255, 255, 255, 0.7);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.upload-box:hover { background: rgba(255,255,255,0.1); transform: scale(1.02);}
+input[type=file] { display: none; }
+.btn {
+    background: linear-gradient(135deg, #007bff, #00c6ff);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin: 10px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 80%;
+    font-size: 15px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+.btn:hover { transform: scale(1.03); }
+.status { margin-top: 10px; color: #fff; font-weight: 600; }
+.footer { margin-top: 15px; color: rgba(255,255,255,0.8); font-size: 13px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -151,10 +150,8 @@ def generate_participation_report(input_file, output_file):
 
     dark_blue_fill = PatternFill(start_color="002060", end_color="002060", fill_type="solid")
     white_font = Font(color="FFFFFF", bold=True)
-    border_style = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin")
-    )
+    border_style = Border(left=Side(style="thin"), right=Side(style="thin"),
+                          top=Side(style="thin"), bottom=Side(style="thin"))
 
     for cell in ws_data[1]:
         cell.fill = dark_blue_fill
@@ -220,12 +217,14 @@ def generate_participation_report(input_file, output_file):
     chart.title = "Department-wise Test Participation"
     chart.x_axis.title = "Department"
     chart.y_axis.title = "Number of Students"
+
     data = Reference(ws_summary, min_col=2, max_col=max_col - 1, min_row=1, max_row=max_row - 1)
     categories = Reference(ws_summary, min_col=1, max_col=1, min_row=2, max_row=max_row - 1)
     chart.add_data(data, titles_from_data=True)
     chart.set_categories(categories)
     chart.height = 10
     chart.width = 20
+
     chart_col = get_column_letter(max_col + 2)
     ws_summary.add_chart(chart, f"{chart_col}2")
 
@@ -234,7 +233,8 @@ def generate_participation_report(input_file, output_file):
         column_letter = get_column_letter(col)
         for row in range(1, max_row + 1):
             val = ws_summary.cell(row=row, column=col).value
-            if val: max_length = max(max_length, len(str(val)))
+            if val:
+                max_length = max(max_length, len(str(val)))
         ws_summary.column_dimensions[column_letter].width = max_length + 8
 
     wb.save(output_file)
@@ -243,19 +243,24 @@ def generate_participation_report(input_file, output_file):
 # -------------------- PERFORMANCE REPORT --------------------
 def generate_performance_report(input_file, output_file):
     df = pd.read_excel(input_file)
+
+    # Participation first
     generate_participation_report(input_file, output_file)
 
     status_index = df.columns.get_loc("Test Status")
     percentage_col = df.columns[status_index + 3]
 
     def categorize(percentage):
-        if pd.isna(percentage): return "Not Attended"
-        str_pct = str(percentage).strip()
-        if str_pct in ["-", "", "NA", "n/a"]: return "Not Attended"
-        try:
-            p = float(str_pct.replace("%", ""))
-        except:
+        if pd.isna(percentage):
             return "Not Attended"
+        percentage_str = str(percentage).strip()
+        if percentage_str in ["-", "", "NA", "n/a"]:
+            return "Not Attended"
+        try:
+            p = float(percentage_str.replace("%", ""))
+        except ValueError:
+            return "Not Attended"
+
         if p > 75:
             return "Good"
         elif p > 50:
@@ -289,7 +294,8 @@ def generate_performance_report(input_file, output_file):
     white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
     light_blue_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
-    border_style = Border(left=Side("thin"), right=Side("thin"), top=Side("thin"), bottom=Side("thin"))
+    border_style = Border(left=Side(style="thin"), right=Side(style="thin"),
+                          top=Side(style="thin"), bottom=Side(style="thin"))
 
     for col in range(1, max_col + 1):
         cell = ws_perf.cell(row=1, column=col)
@@ -309,12 +315,14 @@ def generate_performance_report(input_file, output_file):
     chart2.title = "Department-wise Performance Summary"
     chart2.x_axis.title = "Department"
     chart2.y_axis.title = "Number of Students"
+
     data2 = Reference(ws_perf, min_col=2, max_col=max_col - 1, min_row=1, max_row=max_row - 1)
     categories2 = Reference(ws_perf, min_col=1, max_col=1, min_row=2, max_row=max_row - 1)
     chart2.add_data(data2, titles_from_data=True)
     chart2.set_categories(categories2)
     chart2.height = 10
     chart2.width = 20
+
     chart_col = get_column_letter(max_col + 2)
     ws_perf.add_chart(chart2, f"{chart_col}2")
 
@@ -323,7 +331,8 @@ def generate_performance_report(input_file, output_file):
         column_letter = get_column_letter(col)
         for row in range(1, max_row + 1):
             val = ws_perf.cell(row=row, column=col).value
-            if val: max_length = max(max_length, len(str(val)))
+            if val:
+                max_length = max(max_length, len(str(val)))
         ws_perf.column_dimensions[column_letter].width = max_length + 8
 
     wb.save(output_file)
@@ -333,20 +342,25 @@ def generate_performance_report(input_file, output_file):
 @app.route("/", methods=["GET", "POST"])
 def upload_file():
     if request.method == "POST":
-        file = request.files["file"]
+        file = request.files.get("file")
         action = request.form.get("action")
-        if not file: return "⚠️ Please upload an Excel file.", 400
-        unique_name = str(uuid.uuid4()) + ".xlsx"
-        filepath = os.path.join(UPLOAD_FOLDER, unique_name)
+
+        if not file:
+            return "⚠️ Please upload an Excel file.", 400
+
+        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(filepath)
         output_file = os.path.join(UPLOAD_FOLDER, "Report.xlsx")
+
         if action == "participation":
             generate_participation_report(filepath, output_file)
         elif action == "performance":
             generate_performance_report(filepath, output_file)
         else:
             return "⚠️ Invalid action.", 400
+
         return send_file(output_file, as_attachment=True)
+
     return render_template_string(HTML_PAGE)
 
 
