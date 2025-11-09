@@ -137,7 +137,6 @@ function uploadReport(action) {
 </html>
 """
 
-
 # -------------------- PARTICIPATION REPORT --------------------
 def generate_participation_report(input_file, output_file):
     df = pd.read_excel(input_file)
@@ -247,9 +246,25 @@ def generate_performance_report(input_file, output_file):
     # Participation first
     generate_participation_report(input_file, output_file)
 
-    status_index = df.columns.get_loc("Test Status")
-    percentage_col = df.columns[status_index + 3]
+    # ---------------- Find "Test Status" column (case-insensitive) ----------------
+    status_index = None
+    for idx, col in enumerate(df.columns):
+        if str(col).strip().lower() == "test status":
+            status_index = idx
+            break
+    if status_index is None:
+        raise Exception("❌ 'Test Status' column not found in the uploaded file.")
 
+    # ---------------- Find test name (column before "max score") ----------------
+    max_score_col_name = df.columns[status_index + 1]  # Next column after Test Status
+    test_name = max_score_col_name.replace(" max score", "").strip()
+
+    # ---------------- Total percentage column dynamically ----------------
+    total_percentage_col = f"{test_name} total percentage"
+    if total_percentage_col not in df.columns:
+        raise Exception(f"❌ Expected column '{total_percentage_col}' not found!")
+
+    # ---------------- Categorize function ----------------
     def categorize(percentage):
         if pd.isna(percentage):
             return "Not Attended"
@@ -270,8 +285,10 @@ def generate_performance_report(input_file, output_file):
         else:
             return "Intervention"
 
-    df.insert(status_index + 4, "Category", df[percentage_col].apply(categorize))
+    # ---------------- Insert Category Column ----------------
+    df.insert(status_index + 2, "Category", df[total_percentage_col].apply(categorize))
 
+    # ---------------- Pivot Table ----------------
     pivot_perf = pd.pivot_table(
         df,
         index="Department",
@@ -283,9 +300,11 @@ def generate_performance_report(input_file, output_file):
         margins_name="Grand Total"
     ).reset_index()
 
+    # ---------------- Write Pivot to Excel ----------------
     with pd.ExcelWriter(output_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         pivot_perf.to_excel(writer, index=False, sheet_name="Performance Summary")
 
+    # ---------------- Styling and Chart ----------------
     wb = load_workbook(output_file)
     ws_perf = wb["Performance Summary"]
 
@@ -336,7 +355,6 @@ def generate_performance_report(input_file, output_file):
         ws_perf.column_dimensions[column_letter].width = max_length + 8
 
     wb.save(output_file)
-
 
 # -------------------- FLASK ROUTE --------------------
 @app.route("/", methods=["GET", "POST"])
